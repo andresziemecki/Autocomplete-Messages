@@ -28,7 +28,7 @@ function train {
     saveto='' 
     nfilters='64'
     batch_size='128'
-    epochs='100'
+    epochs='0'
     input_shape='64x64'
     gpus='1'
     shuffle='True'

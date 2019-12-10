@@ -190,3 +190,59 @@ class DataGenerator(keras.utils.Sequence):
             X2[i,] = np.load(ID.replace('images_cropped_np', 'segmentation_cropped_np'))
 
         return [X1.astype('float32'), X2.astype('float32')], [X2.astype('float32'), y1.astype('float32')]
+
+
+class DataUnetGenerator(keras.utils.Sequence):
+    'Generates data for Keras'
+    def __init__(self, list_IDs, batch_size=22, dim=(64,64), shuffle=True, seed=1, n_channels=3):
+        'Initialization'
+        self.dim = dim
+        self.batch_size = batch_size
+        self.list_IDs = list_IDs # Lista de archivos a leer
+        self.shuffle = shuffle
+        self.seed = seed
+        self.n_channels = n_channels
+        self.on_epoch_end()
+
+    def __len__(self):
+        'Denotes the number of batches per epoch'
+        return int(np.floor(len(self.list_IDs) / self.batch_size))
+
+    def __getitem__(self, index):
+        'Generate one batch of data'
+        # Generate indexes of the batch
+        indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
+
+        # Find list of IDs
+        list_IDs_temp = [self.list_IDs[k] for k in indexes]
+
+        # Generate data
+        X1, y1 = self.__data_generation(list_IDs_temp)
+
+        return [X1.astype('float32')], [y1.astype('float32')]
+
+    def on_epoch_end(self):
+        'Updates indexes after each epoch'
+        self.indexes = np.arange(len(self.list_IDs))
+        """if self.shuffle == True:
+            np.random.shuffle(self.indexes)"""
+        if self.shuffle == True:
+            if self.seed is not None:
+                self.seed += 1
+                np.random.seed(self.seed)
+            np.random.shuffle(self.indexes)
+
+    def __data_generation(self, list_IDs_temp):
+        'Generates data containing batch_size samples' # X : (n_samples, *dim)
+        # Initialization
+        X1 = np.empty((self.batch_size, *self.dim, self.n_channels), dtype = 'float32')
+        y1 = np.empty((self.batch_size, *self.dim, 1), dtype='uint8')
+        # Generate data
+        for i, ID in enumerate(list_IDs_temp):
+            # Store class
+            X1[i,] = np.load(ID)
+            y1[i,] = np.load(ID.replace('images_cropped_np', 'segmentation_cropped_np'))
+            # The encoder only uses as input the segmentation as same as the output, so we will return y1
+        return X1, y1
+
+

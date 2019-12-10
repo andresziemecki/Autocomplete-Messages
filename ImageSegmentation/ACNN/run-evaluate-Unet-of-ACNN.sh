@@ -26,18 +26,12 @@ hostname
 function train {
     path='/home/andres/Documents/TESIS/nuclei-segmentation-in-microscope-cell-images/Dataset_64x64_divided_in_5'
     #path='/share/apps/DeepLearning/Datos/nuclei-segmentation-in-microscope-cell-images/Dataset_64x64_5_folds'
-    saveto='' 
-    nfilters='64'
-    batch_size='128'
-    epochs='0'
+    batch_size='32'
     input_shape='64x64'
     gpus='1'
-    shuffle='True'
-    seed='0'
-    lr='1e-4'
     fold='1' #From 1 to 5
 
-    python train_ACNN.py --path=$path --saveto=$saveto --nfilters=$nfilters --batch_size=$batch_size --epochs=$epochs --input_shape=$input_shape --gpus=$gpus --shuffle=$shuffle --seed=$seed --lr=$lr --fold=$fold
+    python evaluate_ACNN.py --path=$path --batch_size=$batch_size --input_shape=$input_shape --gpus=$gpus --fold=$fold
 }
 
 train

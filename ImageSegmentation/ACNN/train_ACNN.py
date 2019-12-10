@@ -118,7 +118,7 @@ model.compile(loss=[models.jaccard_distance, models.euclidean_distance_loss],
 
 print("\nLoading data names...\n")
 # This functions load the names of the images files and their segmentation
-(x_train, x_test) = io.load_data_names_nuclei(path = path_image, shuffle=False, seed = None, fold = fold)
+(x_train, x_test) = io.load_data_names_nuclei(path = path_image, shuffle=False, seed = seed, fold = fold)
 
 # Generators
 training_generator = io.DataGenerator(x_train, dim = (img_rows, img_cols), batch_size = batch_size, n_channels= RGB, shuffle= True)
@@ -147,6 +147,21 @@ print("Trimming the model to get only the unet and save it.\n")
 layer_names = [layer.name for layer in model.layers]
 layer_idx = layer_names.index( 'decode_Activation_unet')
 model = Model(model.input[0], model.layers[layer_idx].output)
+
+
+# We have to compile this model loaded before evaluate it
+if (gpus > 1):
+    with tf.device('/cpu:0'):
+        model = multi_gpu_model(model, gpus=gpus)
+optimizer = Adam(lr=0.0001)
+model.compile(optimizer=optimizer,
+        loss=models.jaccard_distance,metrics=[ 'mse','mae', 'accuracy',
+            models.f1, models.dice])
+
+# Evaluate the unet obtained
+print("Evaluation of UNet from ACNN")
+evaluate_generator = io.DataUnetGenerator(x_test,  dim = (img_rows, img_cols), batch_size = batch_size, shuffle= True)
+print(model.evaluate_generator(generator=evaluate_generator, verbose = 2))
 
 # Plotting the model
 plot_model(model, to_file= path_save + '/unet_ACNN_graph.png', show_shapes = True)
