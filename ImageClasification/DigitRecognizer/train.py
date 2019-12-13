@@ -95,7 +95,7 @@ print("\nInitializatin the training...\n")
 # Fit the model
 history = model.fit_generator(datagen.flow(X_train,Y_train, batch_size=batch_size),
                               epochs = epochs, validation_data = (X_val,Y_val),
-                              verbose = 1, steps_per_epoch=X_train.shape[0] // batch_size)
+                              verbose = 2, steps_per_epoch=X_train.shape[0] // batch_size)
 
 
 print("\nFinalization of the training model and saving the model trained and the history... \n")
