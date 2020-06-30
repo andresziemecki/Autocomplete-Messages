@@ -1,14 +1,14 @@
 #! /bin/bash
-#$ -N ACNN-c-6-5
+#$ -N ACNN-c-6-4
 #$ -cwd
 #$ -j y
 #$ -S /bin/bash
 #$ -V
 ##  pido la cola gpu.q  ---- Esto es un comentario
-#$ -q gpu@compute-6-5.local
+#$ -q gpu@compute-6-4.local
 ## pido una placa  ---- Esto es un comentario
 ## Cantidad de gpu que voy a usar:
-#$ -l gpu=2
+#$ -l gpu=1
 ## Memoria RAM que voy a usar:
 #$ -l memoria_a_usar=1G
 #
@@ -24,12 +24,11 @@ hostname
 ## CUDA_VISIBLE_DEVICES=1 python testkeras.py
 
 function train {
-    path='/home/andres/Documents/TESIS/nuclei-segmentation-in-microscope-cell-images/Dataset_64x64_divided_in_5'
-    #path='/share/apps/DeepLearning/Datos/nuclei-segmentation-in-microscope-cell-images/Dataset_64x64_5_folds'
-    saveto='' 
+    path='/home/andres.ziemecki/nuclei-segmentation-in-microscope-cell-images/Dataset_64x64_5_folds'
+    saveto=''
     nfilters='64'
     batch_size='128'
-    epochs='0'
+    epochs='100'
     input_shape='64x64'
     gpus='1'
     shuffle='True'

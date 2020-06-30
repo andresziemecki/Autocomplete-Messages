@@ -1,11 +1,18 @@
 REFERENCIAS:
 
-nuclei (La original con la que validamos)
+
+nuclei (La original con la que validamos) que es la de acá que esta acá http://www.andrewjanowczyk.com/use-case-1-nuclei-segmentation/ 
+
+
 http://www.jpathinformatics.org/article.asp?issn=2153-3539;year=2016;volume=7;issue=1;spage=29;epage=29;aulast=Janowczyk
 Download: http://andrewjanowczyk.com/wp-static/nuclei.tgz
 Description: the dataset consist of 143 images ER+ BCa images scanned at 40x. Each image is 2,000 x 2,000. Across these images there are about 12,000 nuclei manually segmented. The format of the files is:
 12750_500_f00003_original.tif: original H&E image
 12750_500_f00003_mask.png: mask of the same size, where white pixels are nuclei
+
+
+
+Estas BD se usaron para mejorar la precisión de la la anterior (nuclei)
 
 2009_ISBI_2DNuclei
 http://murphylab.web.cmu.edu/data/2009_ISBI_Nuclei.html

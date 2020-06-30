@@ -4,10 +4,14 @@ import os
 import argparse
 import numpy as np
 import tensorflow as tf
+# Set Seeds for repetibility
+# Importante que vaya antes del import de la arquitectura que carga keras
+np.random.seed(1)
+tf.random.set_seed(2)
 
-from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import multi_gpu_model
+from tensorflow.keras.utils import plot_model
 
 import lib.io as io
 import lib.Architectures as models
@@ -51,11 +55,8 @@ if path_save == '': # If no arguments are given for path_save create default one
     path_save = os.getcwd()  + '/results'
 
 base_path_save_url = path_save + "_encoder_"
-i=0
-path_save = base_path_save_url + str(i)
-while(os.path.exists(base_path_save_url + str(i))):
-    i = i + 1
-    path_save = base_path_save_url + str(i)
+path_save = base_path_save_url + str(fold)
+
 
 io.createFolder(path_save)
 
@@ -73,71 +74,72 @@ input_shape_s = (img_rows,img_cols, 1)
 
 print("\nLoading model of the autoencoder...\n")
 
-# load the model for prior training. In this case is going to be the u-net with 4 levels of encode and decode
-encoder_model = models.unet(input_shape = input_shape_s, nclass=1, fchannel=-1, nf1 = nf)
+# load the model for prior training. In this case is going to be the u-net with 
+# 4 levels of encode and decode
+model = models.unet(input_shape=input_shape_s, nclass=1, fchannel=-1, nf1=nf, 
+        l2reg=0)
 
 print("Compiing the model of the autonecoder...\n")
 
 # Compile the model with multigpu or single gpu
 if (gpus > 1):
     with tf.device('/cpu:0'):
-        encoder_model = multi_gpu_model(encoder_model, gpus=gpus)
+        model = multi_gpu_model(model, gpus=gpus)
 optimizer = Adam(lr=lr)
-encoder_model.compile(optimizer=optimizer,
-        loss=models.jaccard_distance,metrics=[ 'mse','mae', 'accuracy',
-            models.f1, models.dice, models.jaccard_distance])
+model.compile(
+        optimizer=optimizer,
+        loss=models.jaccard_distance,
+        metrics=['mse', models.dice]
+        )
 
 print("\nSummary of the autoencoder model:\n")
-encoder_model.summary()
+model.summary()
 
 print("\nSaving architecture of the autoencoder model to a png file...\n")
 
 # Save the model as png image
-from tensorflow.keras.utils import plot_model
-plot_model(encoder_model, to_file= path_save + '/autoencoder_architecture_graph.png', show_shapes = True)
+plot_model(model, to_file=path_save+'/autoencoder_architecture_graph.png', 
+        show_shapes=True)
 
 # Load the names of the images files and their segmentation
-(x_train, x_test) = io.load_data_names_nuclei(path = path_image, shuffle=False, seed = None, fold = fold)
+(x_train, x_test) = io.load_data_names_nuclei(path=path_image, shuffle=False, 
+        seed=None, fold=fold)
 
 # DataGenerator because of limit computations
-training_generator = io.DataEncoderGenerator(x_train, dim = (img_rows, img_cols), batch_size = batch_size, shuffle= True)
-validation_generator = io.DataEncoderGenerator(x_test,  dim = (img_rows, img_cols), batch_size = batch_size, shuffle= True)
+training_generator = io.DataEncoderGenerator(x_train, dim=(img_rows, img_cols), 
+        batch_size=batch_size, shuffle=True)
+validation_generator = io.DataEncoderGenerator(x_test,  dim=(img_rows, img_cols), 
+        batch_size=batch_size, shuffle=True)
 
 print("\nInitializatin the training of the autoencoder...\n")
 
 # Train model on dataset
-history = encoder_model.fit_generator(generator = training_generator,
-                    validation_data = validation_generator,
-                    epochs = epochs,
-                    verbose = 2,
+history = model.fit_generator(generator=training_generator,
+                    validation_data=validation_generator,
+                    epochs=epochs,
+                    verbose=2,
                     use_multiprocessing=False,
                     workers=0,
                     shuffle=False)
 
 print("\nFinalization of the training model and saving the model trained and the history... \n")
 
-encoder_model.save(path_save + '/autoencoder_model.h5')
+model.save(path_save + '/autoencoder_model.h5')
 np.save(path_save + '/autoencoder_history.npy', history.history)
 
-print("throwing out the decoder part of the autoencoder to get only the encoder part...")
 
-# Cutting the model to the half
-layer_names = [layer.name for layer in encoder_model.layers]
-layer_idx = layer_names.index('l4_Activation_2')
-encoder_model = Model(encoder_model.input, encoder_model.layers[layer_idx].output)
-
-# Do this model not trainable
-for layer in encoder_model.layers:
-    layer.trainable = False
+print('Getting the encoder from the Unet')
+encoder = models.GetEncoderFromUnet(model)
 
 # Let's look how the model is and how much parameters has after cutting it
-print("Summary of the model after cutting:\n")
-encoder_model.summary()
+print("Summary of the encoder:\n")
+encoder.summary()
 
-print("\nSaving the encoder_model...\n")
+print("\nSaving the encoder...\n")
 
 # Save the encoder model as png image
-plot_model(encoder_model, to_file= path_save + '/encoder_architecture_graph.png', show_shapes = True)
-encoder_model.save(path_save + '/encoder_model.h5')
+plot_model(encoder, to_file=path_save+'/encoder_architecture_graph.png', 
+        show_shapes=True)
+encoder.save(path_save + '/encoder_model.h5')
 
 print("\nENCODER PART FINISHED\n")

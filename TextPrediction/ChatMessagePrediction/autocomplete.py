@@ -1,9 +1,4 @@
 """
-#Example script to generate text from Nietzsche's writings.
-At least 20 epochs are required before the generated text
-starts sounding coherent.
-It is recommended to run this script on GPU, as recurrent
-networks are quite computationally intensive.
 If you try this script on new data, make sure your corpus
 has at least ~100k characters. ~1M is better.
 """
@@ -73,13 +68,13 @@ model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
 def sample(preds, temperature=1.0):
     # helper function to sample an index from a probability array
-    #preds = np.asarray(preds).astype('float64')
-    #preds = np.log(preds) / temperature
-    #exp_preds = np.exp(preds)
-    #preds = exp_preds / np.sum(exp_preds)
-    #probas = np.random.multinomial(1, preds, 1)
-    #return np.argmax(probas)
-    return np.argmax(preds)
+    preds = np.asarray(preds).astype('float64')
+    preds = np.log(preds) / temperature
+    exp_preds = np.exp(preds)
+    preds = exp_preds / np.sum(exp_preds)
+    probas = np.random.multinomial(1, preds, 1)
+    return np.argmax(probas)
+    #return np.argmax(preds)
 
 
 def on_epoch_end(epoch, _):
