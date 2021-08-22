@@ -8,8 +8,8 @@ from keras.callbacks import LambdaCallback
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
-from keras.optimizers import RMSprop
-from keras.utils.data_utils import get_file
+from tensorflow.keras.optimizers import RMSprop
+from keras.models import load_model
 import numpy as np
 import random
 import sys
@@ -27,8 +27,10 @@ char_indices = dict((c, i) for i, c in enumerate(chars))
 indices_char = dict((i, c) for i, c in enumerate(chars))
 
 messages = text.split('\n')
-messages.pop(-1)
+if messages[-1] == '':
+    messages.pop()
 
+# cut the text in semi-redundant sequences of maxlen characters
 maxlen = len(max(messages, key=len))
 steps = 1
 sentences = []
@@ -39,12 +41,10 @@ for i in messages:
     next_chars.append('\n')
     for it,j in enumerate(i):
         if (it == len(i)-1):
-            continue;
+            continue
         s = (maxlen - len(i[:-1-it]))*'0' + i[:-1-it]
         sentences.append(s)
         next_chars.append(i[-1-it])
-
-# cut the text in semi-redundant sequences of maxlen characters
 
 print('nb sequences:', len(sentences))
 
@@ -58,7 +58,7 @@ for i, sentence in enumerate(sentences):
     y[i, char_indices[next_chars[i]]] = 1
 
 # build the model: a single LSTM
-print('Build model...')
+print('Building model...')
 model = Sequential()
 model.add(LSTM(128, input_shape=(maxlen, len(chars))))
 model.add(Dense(len(chars), activation='softmax'))
@@ -66,8 +66,8 @@ model.add(Dense(len(chars), activation='softmax'))
 optimizer = RMSprop(lr=0.01)
 model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
+# helper function to sample an index from a probability array
 def sample(preds, temperature=1.0):
-    # helper function to sample an index from a probability array
     preds = np.asarray(preds).astype('float64')
     preds = np.log(preds) / temperature
     exp_preds = np.exp(preds)
@@ -76,9 +76,8 @@ def sample(preds, temperature=1.0):
     return np.argmax(probas)
     #return np.argmax(preds)
 
-
+# Function invoked at end of each epoch. Prints generated text for an empty input.
 def on_epoch_end(epoch, _):
-    # Function invoked at end of each epoch. Prints generated text.
     print()
     print('----- Generating text after Epoch: %d' % epoch)
 
@@ -109,12 +108,12 @@ def on_epoch_end(epoch, _):
 
 print_callback = LambdaCallback(on_epoch_end=on_epoch_end)
 
+# Load a model if exists
 exists = os.path.isfile('my_model.h5')
-from keras.models import load_model
 if exists:
     model = load_model('my_model.h5')
 else:
-    model.fit(x, y, batch_size=128, epochs=60, callbacks=[print_callback])
+    model.fit(x, y, batch_size=128, epochs=1, callbacks=[print_callback])
     model.save('my_model.h5')
 
 
@@ -131,7 +130,7 @@ def generate_output():
     sys.stdout.write(usr_input)
 
     i = 0
-    while (i < 300): # I don't want more than 220 words
+    while (i < 300): # I don't want more than 300 characters
 
         x_pred = np.zeros((1, maxlen, len(chars)))
 
